@@ -50,17 +50,16 @@ health-exporter/
 
 ---
 
-## Quick Start (Local)
+## Quick Start
 
 ```bash
 # 1. Install dependencies
 go mod tidy
 
-# 2. (Option A) Use the default services.yaml
-#    Edit services.yaml with your URLs, then run:
+# 2. (Option A) Edit services.yaml manually, then run
 go run cmd/exporter/main.go
 
-# 2. (Option B) Auto-detect services running on this machine
+# 2. (Option B) Auto-detect services running on this machine first
 go run cmd/exporter/main.go --scan
 go run cmd/exporter/main.go
 
@@ -90,32 +89,34 @@ Tries `http://` first, falls back to `https://`. Any port that returns a respons
 
 ---
 
-## Deploy on Ubuntu Server (Proxmox)
+## Deploy on a Server
 
-### Step 1 — Build a Linux binary (on your Mac)
+Run all commands directly on the server console.
+
+### Step 1 — Install Go
 
 ```bash
-GOOS=linux GOARCH=amd64 go build -o health-exporter ./cmd/exporter
+# Debian / Ubuntu
+sudo apt update && sudo apt install -y golang-go
+
+# RHEL / Rocky / AlmaLinux
+sudo dnf install -y golang
+
+# Verify
+go version
 ```
 
-### Step 2 — Copy binary to server
+### Step 2 — Clone and build
 
 ```bash
-# Create directory on server first
-ssh user@<SERVER_IP> "sudo mkdir -p /opt/health-exporter && sudo chown $USER /opt/health-exporter"
-
-# Copy binary
-scp health-exporter user@<SERVER_IP>:/opt/health-exporter/
+git clone https://github.com/internPholx/health-exporter.git
+cd health-exporter
+go build -o health-exporter ./cmd/exporter
 ```
 
-### Step 3 — Scan for services on the server
-
-SSH into the server, then:
+### Step 3 — Scan for running services
 
 ```bash
-ssh user@<SERVER_IP>
-cd /opt/health-exporter
-
 ./health-exporter --scan
 ```
 
@@ -130,7 +131,11 @@ Example output:
 บันทึกลง services.yaml เรียบร้อย
 ```
 
-### Step 4 — Set up systemd service
+> Skip this step if you prefer to edit `services.yaml` manually.
+
+### Step 4 — Set up as a system service (systemd)
+
+> For systems that use systemd (most modern Linux distributions).
 
 ```bash
 sudo nano /etc/systemd/system/health-exporter.service
@@ -154,9 +159,12 @@ RestartSec=5s
 WantedBy=multi-user.target
 ```
 
-Enable and start:
+Move the binary to the path defined above, then enable and start:
 
 ```bash
+sudo mkdir -p /opt/health-exporter
+sudo cp health-exporter services.yaml /opt/health-exporter/
+
 sudo systemctl daemon-reload
 sudo systemctl enable health-exporter
 sudo systemctl start health-exporter
