@@ -13,14 +13,21 @@ import (
 	"health-exporter/internal/checker"
 	"health-exporter/internal/metrics"
 	"health-exporter/internal/models"
+	"health-exporter/internal/scanner"
 
 	"gopkg.in/yaml.v3"
 )
 
 func main() {
+	// ถ้าใส่ flag --scan จะสแกน localhost แล้วเขียนทับ services.yaml
+	if len(os.Args) > 1 && os.Args[1] == "--scan" {
+		runScan()
+		return
+	}
+
 	data, err := os.ReadFile("services.yaml")
 	if err != nil {
-		log.Fatal("อ่านไฟล์ไม่ได้:", err)
+		log.Fatal("อ่านไฟล์ไม่ได้ (ลองรัน --scan ก่อน):", err)
 	}
 	var cfg models.Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
@@ -90,4 +97,32 @@ func runCheck(cfg models.Config, col *metrics.Collector) {
 		}
 		log.Printf("  %-45s %s", r.URL, status)
 	}
+}
+
+// runScan สแกน localhost หา HTTP service แล้วเขียนผลลงใน services.yaml
+func runScan() {
+	fmt.Println("กำลังสแกน localhost...")
+	services := scanner.Run()
+
+	if len(services) == 0 {
+		fmt.Println("ไม่พบ HTTP service บน localhost")
+		return
+	}
+
+	fmt.Printf("พบ %d services:\n", len(services))
+	for _, s := range services {
+		fmt.Printf("  - %s (%s)\n", s.Name, s.URL)
+	}
+
+	cfg := models.Config{Services: services}
+	out, err := yaml.Marshal(cfg)
+	if err != nil {
+		log.Fatal("marshal yaml ไม่ได้:", err)
+	}
+
+	if err := os.WriteFile("services.yaml", out, 0644); err != nil {
+		log.Fatal("เขียนไฟล์ไม่ได้:", err)
+	}
+
+	fmt.Println("บันทึกลง services.yaml เรียบร้อย")
 }
