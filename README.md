@@ -56,14 +56,17 @@ health-exporter/
 # 1. Install dependencies
 go mod tidy
 
-# 2. (Option A) Edit services.yaml manually, then run
-go run cmd/exporter/main.go
+# 2. Build
+go build -o health-exporter ./cmd/exporter
 
-# 2. (Option B) Auto-detect services running on this machine first
-go run cmd/exporter/main.go --scan
-go run cmd/exporter/main.go
+# 3. (Option A) Edit services.yaml manually, then run
+./health-exporter
 
-# 3. Verify
+# 3. (Option B) Auto-detect services running on this machine first
+./health-exporter --scan
+./health-exporter
+
+# 4. Verify
 curl http://localhost:9090/metrics
 ```
 
