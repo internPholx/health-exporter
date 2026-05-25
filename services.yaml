@@ -1,0 +1,7 @@
+services:
+  - name: "Google"
+    url: "https://www.google.com"
+  - name: "Cloudflare DNS"
+    url: "https://1.1.1.1"
+  - name: "Fake Service"
+    url: "https://this-does-not-exist-xyz.com"

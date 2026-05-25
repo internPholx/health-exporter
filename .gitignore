@@ -1,0 +1,12 @@
+# Binary
+health-exporter
+
+# Go build cache
+/dist/
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
